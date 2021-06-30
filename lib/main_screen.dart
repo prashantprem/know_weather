@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'location.dart';
+import 'package:http/http.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key key}) : super(key: key);
@@ -11,14 +13,34 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  @override
+  void initState() {
+    super.initState();
+    getLocation();
+  }
+
   void getLocation() async {
-    Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.low);
-    print(position);
+    Location myLocation = Location();
+    await myLocation.getCurrentLocation();
+    print(myLocation.latitude);
+    print(myLocation.longitude);
+  }
+
+  void getData() async {
+    var url = Uri.parse(
+        'http://api.openweathermap.org/data/2.5/weather?lat=26.594594594594593&lon=81.30506516476466&appid=257842d39a3783089f32e764f1e74a7a');
+    Response response = await get(url);
+    if (response.statusCode == 200) {
+      String data = response.body;
+      print(data);
+    } else {
+      print(response.statusCode);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    getData();
     return Scaffold(
       body: Column(
         children: [
@@ -43,9 +65,7 @@ class _MainScreenState extends State<MainScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       TextButton(
-                          onPressed: () {
-                            getLocation();
-                          },
+                          onPressed: () {},
                           child: Icon(
                             FontAwesomeIcons.locationArrow,
                             color: Colors.white,
