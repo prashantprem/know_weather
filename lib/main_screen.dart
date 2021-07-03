@@ -4,43 +4,61 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'location.dart';
 import 'package:http/http.dart';
+import 'weather.dart';
+import 'networking.dart';
+import 'dart:convert';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key key}) : super(key: key);
+  MainScreen({Key key, this.locationWeather}) : super(key: key);
+  final locationWeather;
 
   @override
   _MainScreenState createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
+  String cityName, todayDate;
+  String weatherDescription;
+  double cityTemp;
+  int cityHumidity, date;
+  double cityFeels;
+  var today;
+  dynamic dayData =
+      '{ "1" : "Mon", "2" : "Tue", "3" : "Wed", "4" : "Thur", "5" : "Fri", "6" : "Sat", "7" : "Sun" }';
+
+  dynamic monthData =
+      '{ "1" : "Jan", "2" : "Feb", "3" : "Mar", "4" : "Apr", "5" : "May", "6" : "June", "7" : "Jul", "8" : "Aug", "9" : "Sep", "10" : "Oct", "11" : "Nov", "12" : "Dec" }';
+
   @override
   void initState() {
     super.initState();
-    getLocation();
+    updateUI(widget.locationWeather);
   }
 
-  void getLocation() async {
-    Location myLocation = Location();
-    await myLocation.getCurrentLocation();
-    print(myLocation.latitude);
-    print(myLocation.longitude);
-  }
+  void updateUI(dynamic weatherData) {
+    setState(() {
+      cityName = weatherData['name'];
+      weatherDescription = weatherData['weather'][0]['main'];
+      cityTemp = weatherData['main']['temp'];
+      cityHumidity = weatherData['main']['humidity'];
+      cityFeels = weatherData['main']['feels_like'];
+      date = weatherData['dt'];
+      today = new DateTime.fromMillisecondsSinceEpoch(date * 1000);
+      print(today.hour);
+      todayDate = (json.decode(dayData)['${today.weekday}'] +
+              " " +
+              today.day.toString() +
+              " " +
+              json.decode(monthData)['${today.month}'])
+          .toString();
 
-  void getData() async {
-    var url = Uri.parse(
-        'http://api.openweathermap.org/data/2.5/weather?lat=26.594594594594593&lon=81.30506516476466&appid=257842d39a3783089f32e764f1e74a7a');
-    Response response = await get(url);
-    if (response.statusCode == 200) {
-      String data = response.body;
-      print(data);
-    } else {
-      print(response.statusCode);
-    }
+      print(todayDate);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    getData();
+    // updateUI();
     return Scaffold(
       body: Column(
         children: [
@@ -71,7 +89,7 @@ class _MainScreenState extends State<MainScreen> {
                             color: Colors.white,
                           )),
                       Text(
-                        'Los Angeles',
+                        cityName,
                         style: TextStyle(
                           fontFamily: 'lightMontserrat',
                           fontSize: 40.0,
@@ -84,7 +102,7 @@ class _MainScreenState extends State<MainScreen> {
                     height: 15.0,
                   ),
                   Text(
-                    'clear',
+                    weatherDescription,
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.8),
                       fontFamily: 'extralightMontserrat',
@@ -95,7 +113,7 @@ class _MainScreenState extends State<MainScreen> {
                     height: 20.0,
                   ),
                   Text(
-                    '25°',
+                    cityTemp.toInt().toString() + '°',
                     style: TextStyle(
                         fontSize: 80.0, fontFamily: 'extralightMontserrat'),
                   ),
@@ -137,7 +155,7 @@ class _MainScreenState extends State<MainScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'today, Mon 4',
+                        'today, ' + todayDate,
                         style: TextStyle(
                           fontFamily: 'lightMontserrat',
                           fontSize: 15.0,
@@ -145,7 +163,7 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                       ),
                       Text(
-                        'humidity: 10%',
+                        'humidity: ' + cityHumidity.toString() + '%',
                         style: TextStyle(
                           fontFamily: 'lightMontserrat',
                           fontSize: 15.0,
@@ -153,7 +171,7 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                       ),
                       Text(
-                        'feels: 27°',
+                        'feels:  ' + cityFeels.toInt().toString() + '°',
                         style: TextStyle(
                           fontFamily: 'lightMontserrat',
                           fontSize: 15.0,
