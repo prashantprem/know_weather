@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:know_weather/search_city.dart';
 import 'location.dart';
 import 'package:http/http.dart';
 import 'weather.dart';
@@ -9,20 +10,28 @@ import 'networking.dart';
 import 'dart:convert';
 
 class MainScreen extends StatefulWidget {
-  MainScreen({Key key, this.locationWeather}) : super(key: key);
-  final locationWeather;
+  MainScreen({Key key, this.locationWeather, this.nextdayWeather})
+      : super(key: key);
+  final locationWeather, nextdayWeather;
 
   @override
   _MainScreenState createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  String cityName, todayDate;
+  String cityName, todayDate, tomorrowDate;
   String weatherDescription;
-  double cityTemp;
-  int cityHumidity, date;
+  double cityTemp, tomTemp;
+  int cityHumidity, date, date2;
   double cityFeels;
-  var today;
+  var nightImage = AssetImage('assets/images/ic_night.jpg');
+  var morningImage = AssetImage('assets/images/ic_morning2.png');
+  var eveningImage = AssetImage('assets/images/ic_evening.jpg');
+  var nightColour = Color(0xff090611),
+      morningColour = Color(0xFF315F50),
+      eveningColour = Color(0xFF875B24);
+  var mImage, mColour;
+  var today, tomorrow, tomWeatherdes;
   dynamic dayData =
       '{ "1" : "Mon", "2" : "Tue", "3" : "Wed", "4" : "Thur", "5" : "Fri", "6" : "Sat", "7" : "Sun" }';
 
@@ -32,28 +41,52 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    updateUI(widget.locationWeather);
+    updateUI(widget.locationWeather, widget.nextdayWeather);
+    print(widget.locationWeather);
   }
 
-  void updateUI(dynamic weatherData) {
-    setState(() {
-      cityName = weatherData['name'];
-      weatherDescription = weatherData['weather'][0]['main'];
-      cityTemp = weatherData['main']['temp'];
-      cityHumidity = weatherData['main']['humidity'];
-      cityFeels = weatherData['main']['feels_like'];
-      date = weatherData['dt'];
-      today = new DateTime.fromMillisecondsSinceEpoch(date * 1000);
-      print(today.hour);
-      todayDate = (json.decode(dayData)['${today.weekday}'] +
-              " " +
-              today.day.toString() +
-              " " +
-              json.decode(monthData)['${today.month}'])
-          .toString();
+  void updateUI(dynamic weatherData, dynamic nextDay) {
+    cityName = weatherData['name'];
+    weatherDescription = weatherData['weather'][0]['main'];
+    cityTemp = weatherData['main']['temp'];
+    cityHumidity = weatherData['main']['humidity'];
+    cityFeels = weatherData['main']['feels_like'];
+    date = weatherData['dt'];
+    today = new DateTime.fromMillisecondsSinceEpoch(date * 1000);
+    // print(today.hour);
+    todayDate = (json.decode(dayData)['${today.weekday}'] +
+            " " +
+            today.day.toString() +
+            " " +
+            json.decode(monthData)['${today.month}'])
+        .toString();
 
-      print(todayDate);
-    });
+    print(todayDate);
+    date2 = nextDay['daily'][1]['dt'];
+    tomWeatherdes = nextDay['daily'][1]['weather'][0]['description'];
+    tomTemp = nextDay['daily'][1]['temp']['day'];
+    print(tomWeatherdes);
+    print(tomTemp);
+    tomorrow = new DateTime.fromMillisecondsSinceEpoch(date2 * 1000);
+    tomorrowDate = (json.decode(dayData)['${tomorrow.weekday}'] +
+            " " +
+            tomorrow.day.toString() +
+            " " +
+            json.decode(monthData)['${tomorrow.month}'])
+        .toString();
+    if (today.hour > 5 && today.hour <= 11) {
+      mImage = morningImage;
+      mColour = morningColour;
+    }
+    if (today.hour >= 12 && today.hour < 18) {
+      mImage = eveningImage;
+      mColour = eveningColour;
+    }
+    if ((today.hour >= 18 && today.hour <= 24) ||
+        (today.hour >= 1 && today.hour <= 5)) {
+      mImage = nightImage;
+      mColour = nightColour;
+    }
   }
 
   @override
@@ -64,12 +97,12 @@ class _MainScreenState extends State<MainScreen> {
         children: [
           Container(
             // constraints: BoxConstraints.expand(),
-            height: 575.0,
+            height: 580.0,
             width: double.infinity,
             decoration: BoxDecoration(
                 image: DecorationImage(
-              image: AssetImage('assets/images/night2.jpg'),
-              fit: BoxFit.fill,
+              image: mImage,
+              fit: BoxFit.cover,
             )),
             child: Padding(
               padding: const EdgeInsets.only(left: 10.0, right: 10.0),
@@ -82,10 +115,15 @@ class _MainScreenState extends State<MainScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      TextButton(
-                          onPressed: () {},
-                          child: Icon(
-                            FontAwesomeIcons.locationArrow,
+                      IconButton(
+                          onPressed: () {
+                            Navigator.push(context,
+                                MaterialPageRoute(builder: (context) {
+                              return SearchCity();
+                            }));
+                          },
+                          icon: Icon(
+                            FontAwesomeIcons.search,
                             color: Colors.white,
                           )),
                       Text(
@@ -143,14 +181,13 @@ class _MainScreenState extends State<MainScreen> {
           ),
           Expanded(
               child: Container(
-            color: Color(0xff3a287e),
+            color: mColour,
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                SizedBox(
-                  height: 20.0,
-                ),
                 Padding(
-                  padding: const EdgeInsets.only(left: 20.0, right: 20.0),
+                  padding:
+                      const EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -188,12 +225,13 @@ class _MainScreenState extends State<MainScreen> {
                   endIndent: 20.0,
                 ),
                 Padding(
-                  padding: EdgeInsets.only(left: 20.0, right: 20.0),
+                  padding:
+                      EdgeInsets.only(left: 20.0, right: 20.0, bottom: 20.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Tuesday 5',
+                        tomorrowDate,
                         style: TextStyle(
                           fontFamily: 'lightMontserrat',
                           fontSize: 15.0,
@@ -201,7 +239,7 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                       ),
                       Text(
-                        'Sunny, 31°',
+                        tomWeatherdes + ", " + tomTemp.toInt().toString() + '°',
                         style: TextStyle(
                           fontFamily: 'lightMontserrat',
                           fontSize: 15.0,

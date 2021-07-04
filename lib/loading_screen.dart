@@ -21,7 +21,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
   }
 
   double cityLatitude, cityLongitude;
-  var weatherData;
+  var weatherData, nextDayWeatherData;
 
   void getLocation() async {
     Location myLocation = Location();
@@ -31,12 +31,15 @@ class _LoadingScreenState extends State<LoadingScreen> {
     NetworkHelper networkHelper = NetworkHelper(
         'http://api.openweathermap.org/data/2.5/weather?lat=$cityLatitude&lon=$cityLongitude&appid=257842d39a3783089f32e764f1e74a7a&units=metric');
     weatherData = await networkHelper.getData();
+    NetworkHelper nextdayNetworkHelper = NetworkHelper(
+        'http://api.openweathermap.org/data/2.5/onecall?lat=$cityLatitude&lon=$cityLongitude&exclude=minutely,hourly&appid=257842d39a3783089f32e764f1e74a7a&units=metric');
+    nextDayWeatherData = await nextdayNetworkHelper.getData();
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return MainScreen(
         locationWeather: weatherData,
+        nextdayWeather: nextDayWeatherData,
       );
     }));
-    print(weatherData);
   }
 
   @override
@@ -51,7 +54,6 @@ class _LoadingScreenState extends State<LoadingScreen> {
         child: SpinKitWave(
           color: Colors.yellowAccent,
           size: 90.0,
-          duration: Duration(milliseconds: 1200),
         ),
       ),
     );
